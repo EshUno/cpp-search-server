@@ -52,7 +52,7 @@ struct Document {
 struct Query{
        set<string> plus_words;
        set<string> minus_words;
-       void GetWords() const{
+       void PrintWords() const{
            cout << "plus: " << endl;
            for (auto x: plus_words)
                cout << x << "  ";
@@ -74,8 +74,9 @@ public:
     void AddDocument(int document_id, const string& document) {
         const vector<string> words = SplitIntoWordsNoStop(document);
         ++document_count_;
-        for (auto w : words){       
-           indices_[w][document_id] += 1. / words.size();
+        double frequency = 1. / words.size();
+        for (auto word : words){       
+           indices_[word][document_id] += frequency;
             
         }     
     }
@@ -131,16 +132,16 @@ private:
         return matched_documents;
     }   
     
-    double FindIDF(const string &word) const{
+    double CalcIdf(const string &word) const{
         return log(document_count_ * 1.0 / indices_.at(word).size());
     }
        
     void PlusMatch(map<int, double>& match, const  set<string>& query_plus) const {
         for(auto word: query_plus){
             if (indices_.count(word) != 0){
-                double IDF = FindIDF(word);
-                for (const auto [id, TF]: indices_.at(word))
-                    match[id] += TF * IDF;
+                double idf = CalcIdf(word);
+                for (const auto [id, tf]: indices_.at(word))
+                    match[id] += tf * idf;
             }   
         }
     }
