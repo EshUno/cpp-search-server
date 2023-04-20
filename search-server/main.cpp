@@ -25,19 +25,12 @@ int ReadLineWithNumber() {
     return result;
 }
 
-bool IsValidWord(const string& word) {
-    return none_of(word.begin(), word.end(), [](char c) {
-        return c >= '\0' && c < ' ';
-    });
-}
-
 vector<string> SplitIntoWords(const string& text) {
     vector<string> words;
     string word;
     for (const char c : text) {
         if (c == ' ') {
             if (!word.empty()) {
-                if (!IsValidWord(word)) throw invalid_argument("Недопустимый формат слов"s);
                 words.push_back(word);
                 word.clear();
             }
@@ -46,7 +39,6 @@ vector<string> SplitIntoWords(const string& text) {
         }
     }
     if (!word.empty()) {
-        if (!IsValidWord(word)) throw invalid_argument("Недопустимый формат слов"s);
         words.push_back(word);
     }
     return words;
@@ -71,7 +63,6 @@ set<string> MakeUniqueNonEmptyStrings(const StringContainer& strings) {
     set<string> non_empty_strings;
     for (const string& str : strings) {
         if (!str.empty()) {
-            if (!IsValidWord(str)) throw invalid_argument("Недопустимый формат слов"s);
             non_empty_strings.insert(str);
         }
     }
@@ -99,6 +90,9 @@ public:
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words)
         : stop_words_(MakeUniqueNonEmptyStrings(stop_words)) {
+        for (const auto& word : stop_words_){
+            if (!IsValidWord(word)) throw invalid_argument("Недопустимый формат слов"s);
+        }
     }
 
     explicit SearchServer(const string& stop_words_text)
@@ -109,6 +103,9 @@ public:
         if (document_id < 0) throw invalid_argument("Документ с отрицательным ID"s);
         if (documents_.count(document_id)) throw invalid_argument("Документ с повторным ID"s);
         const vector<string> words = SplitIntoWordsNoStop(document);
+        for (const auto& word : words){
+            if (!IsValidWord(word)) throw invalid_argument("Недопустимый формат слов"s);
+        }
         const double inv_word_count = 1.0 / words.size();
         for (const string& word : words) {
             word_to_document_freqs_[word][document_id] += inv_word_count;
@@ -222,6 +219,9 @@ private:
             is_minus = true;
             text = text.substr(1);
         }
+        if (text.empty()) throw invalid_argument("Пустой поисковый запрос"s);
+        if (text[0] == '-') throw invalid_argument("Более одного минуса в поисковом запросе"s);
+        if (!IsValidWord(text)) throw invalid_argument("В поисковом запросе встречаются недопустимые символы"s);
         return {text, is_minus, IsStopWord(text)};
     }
 
@@ -233,10 +233,7 @@ private:
     Query ParseQuery(const string& text) const {
         Query query;
         for (const string& word : SplitIntoWords(text)) {
-            const QueryWord query_word = ParseQueryWord(word);
-            if (query_word.data.empty()) throw invalid_argument("Пустой поисковый запрос"s);
-            if (query_word.data[0] == '-') throw invalid_argument("Более одного минуса в поисковом запросе"s);
-            if (!IsValidWord(query_word.data)) throw invalid_argument("В поисковом заепросе встречаются недопустимые символы"s);
+            const QueryWord query_word = ParseQueryWord(word);   
             if (!query_word.is_stop) {
                 if (query_word.is_minus) {
                     query.minus_words.insert(query_word.data);
@@ -282,7 +279,11 @@ private:
         return matched_documents;
     }
 
-
+    static bool IsValidWord(const string& word) {
+        return none_of(word.begin(), word.end(), [](char c) {
+            return c >= '\0' && c < ' ';
+        });
+    }
 };
 
 int main() {
