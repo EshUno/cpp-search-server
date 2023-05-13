@@ -4,7 +4,7 @@ RequestQueue::RequestQueue(const SearchServer& search_server) : server_(search_s
 
 }
 
-void RequestQueue::CheckRequest(const vector<Document>& results){
+void RequestQueue::CheckRequest(const std::vector<Document>& results){
     if (results.empty()){
         ++ zero_result_;
         requests_.push_back({true});
@@ -17,19 +17,13 @@ void RequestQueue::CheckRequest(const vector<Document>& results){
     }
 }
 
-template <typename DocumentPredicate>
-vector<Document> RequestQueue::AddFindRequest(const string& raw_query, DocumentPredicate document_predicate) {
-    const auto search_results = server_.FindTopDocuments(raw_query, document_predicate);
-    CheckRequest(search_results);
-    return search_results;
-}
-vector<Document> RequestQueue::AddFindRequest(const string& raw_query, DocumentStatus status) {
+std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query, DocumentStatus status) {
     const auto search_results = server_.FindTopDocuments(raw_query, status);
     CheckRequest(search_results);
     return search_results;
 }
 
-vector<Document> RequestQueue::AddFindRequest(const string& raw_query) {
+std::vector<Document> RequestQueue::AddFindRequest(const std::string& raw_query) {
     const auto search_results = server_.FindTopDocuments(raw_query);
     CheckRequest(search_results);
     return search_results;

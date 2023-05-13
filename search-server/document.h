@@ -1,9 +1,13 @@
 #pragma once
-#ifndef DOCUMENT_H
-#define DOCUMENT_H
 #include <iostream>
 
-using namespace std;
+enum class DocumentStatus {
+    ACTUAL,
+    IRRELEVANT,
+    BANNED,
+    REMOVED,
+};
+
 class Document {
 public:
     Document() = default;
@@ -12,7 +16,7 @@ public:
     double relevance = 0.0;
     int rating = 0;
 
-    friend ostream& operator<<(ostream &os, const Document& doc);
+    friend std::ostream& operator<<(std::ostream &os, const Document& doc);
 };
 
-#endif // DOCUMENT_H
+

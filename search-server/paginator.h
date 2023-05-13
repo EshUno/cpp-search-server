@@ -1,14 +1,10 @@
 #pragma once
-#ifndef PAGINATOR_H
-#define PAGINATOR_H
 #include <iostream>
 #include <vector>
 
-using namespace std;
-
 template <typename Iterator>
 class IteratorRange{
-    pair<Iterator, Iterator> page;
+    std::pair<Iterator, Iterator> page;
 
 public:
     Iterator begin() const {
@@ -25,7 +21,7 @@ public:
 };
 
 template <typename Iterator>
-ostream& operator<<(ostream &os, const IteratorRange<Iterator>& rng) {
+std::ostream& operator<<(std::ostream &os, const IteratorRange<Iterator>& rng) {
     for (auto i = rng.begin(); i != rng.end(); ++i){
         os << *i ;
     }
@@ -34,7 +30,7 @@ ostream& operator<<(ostream &os, const IteratorRange<Iterator>& rng) {
 
 template <typename Iterator>
 class Paginator{
-    vector<IteratorRange<Iterator>> pages;
+    std::vector<IteratorRange<Iterator>> pages;
 
 public:
     auto begin() const{
@@ -67,4 +63,3 @@ auto Paginate(const Container& c, size_t page_size) {
     return Paginator(begin(c), end(c), page_size);
 }
 
-#endif // PAGINATOR_H
