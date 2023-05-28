@@ -1,5 +1,4 @@
 #include "search_server.h"
-#include <algorithm>
 #include <numeric>
 
 SearchServer::SearchServer(const std::string& stop_words_text)
@@ -17,7 +16,8 @@ void SearchServer::AddDocument(int document_id, const std::string& document, Doc
     for (const std::string& word : words) {
         word_to_document_freqs_[word][document_id] += inv_word_count;
     }
-    documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status});
+    ids_.emplace(document_id);
+    documents_.emplace(document_id, DocumentData{ComputeAverageRating(ratings), status, words});
 }
 
 std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query, DocumentStatus status) const {
@@ -41,6 +41,14 @@ int SearchServer::GetDocumentId(int index) const {
     return it->first;
 }
 
+std::set<int>::const_iterator SearchServer::begin(){
+    return ids_.begin();
+}
+
+std::set<int>::const_iterator SearchServer::end(){
+    return ids_.end();
+}
+
 std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument(const std::string& raw_query, int document_id) const {
     const auto query = ParseQuery(raw_query);
     std::vector<std::string> matched_words;
@@ -62,6 +70,59 @@ std::tuple<std::vector<std::string>, DocumentStatus> SearchServer::MatchDocument
         }
     }
     return std::tuple<std::vector<std::string>, DocumentStatus>{matched_words, documents_.at(document_id).status};
+}
+
+const std::map<std::string, double>& SearchServer::GetWordFrequencies(int document_id) const{
+    // если для этого документа уже существует структура с частотами
+    {
+        auto already_ex = word_freqs_.find(document_id);
+        if (already_ex  != word_freqs_.end()) return already_ex->second;
+    }
+
+    {
+        auto doc = documents_.find(document_id);
+        if ( doc != documents_.end()){
+            std::map<std::string, double> res;
+            for (auto &x : doc->second.words){
+                if (res.count(x) == 0){
+                    double freq = word_to_document_freqs_.at(x).at(document_id);
+                    res.emplace(x, freq);
+                }
+            }
+            word_freqs_.emplace(std::make_pair(document_id, res));
+            return word_freqs_.at(document_id);
+        }
+    }
+
+    // если такого документа нет
+    {
+        static std::map<std::string, double> res_s;
+        return res_s;
+    }
+}
+
+void SearchServer::RemoveDocument(int document_id){
+    if (ids_.count(document_id)){
+        ids_.erase(document_id);
+        word_freqs_.erase(document_id);
+
+        std::vector<std::string> res = documents_.at(document_id).words;
+        for (auto &w : res)
+        {
+            auto itr = word_to_document_freqs_.find(w);
+            if (itr != word_to_document_freqs_.end())
+            {
+                auto& doc_to_freq = itr->second;
+                doc_to_freq.erase(document_id);
+                if (doc_to_freq.size() == 0)
+                {
+                    word_to_document_freqs_.erase(itr);
+                }
+            }
+        }
+
+        documents_.erase(document_id);
+    }
 }
 
 bool SearchServer::IsStopWord(const std::string& word) const {

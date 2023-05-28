@@ -1,17 +1,25 @@
 #pragma once
 #include <string>
 #include <vector>
-#include "document.h"
-#include "string_processing.h"
-#include <set>
+#include <unordered_set>
 #include <map>
 #include <cmath>
-
+#include <iterator>
+#include <algorithm>
+#include "document.h"
+#include "log_duration.h"
+#include "string_processing.h"
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
 const double EPSILON = 1e-6;
 
 class SearchServer {
 public:
+    struct DocumentData {
+        int rating;
+        DocumentStatus status;
+        std::vector<std::string> words;
+    };
+
     template <typename StringContainer>
     explicit SearchServer(const StringContainer& stop_words): stop_words_(MakeUniqueNonEmptyStrings(stop_words)) {
         for (const auto& word : stop_words_){
@@ -34,24 +42,27 @@ public:
 
     int GetDocumentId(int index) const;
 
+    std::set<int>::const_iterator begin();
+
+    std::set<int>::const_iterator end();
+
     std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query, int document_id) const;
 
-private:
-    struct DocumentData {
-        int rating;
-        DocumentStatus status;
-    };
+    const std::map<std::string, double>& GetWordFrequencies(int document_id) const;
 
+    void RemoveDocument(int document_id);
+
+private:
     const std::set<std::string> stop_words_;
-    std::map<std::string, std::map<int, double>> word_to_document_freqs_;
-    std::map<int, DocumentData> documents_;
+
+    std::unordered_map<std::string, std::unordered_map<int, double>> word_to_document_freqs_;
+    std::unordered_map<int, DocumentData> documents_;
+    mutable std::unordered_map<int, std::map<std::string, double>> word_freqs_;
+    std::set<int> ids_;
 
     bool IsStopWord(const std::string& word) const;
-
     std::vector<std::string> SplitIntoWordsNoStop(const std::string& text) const;
-
     static int ComputeAverageRating(const std::vector<int>& ratings);
-
     struct QueryWord {
         std::string data;
         bool is_minus;
@@ -59,21 +70,16 @@ private:
     };
 
     QueryWord ParseQueryWord(std::string text) const;
-
     struct Query {
         std::set<std::string> plus_words;
         std::set<std::string> minus_words;
     };
-
     Query ParseQuery(const std::string& text) const;
-
     double ComputeWordInverseDocumentFreq(const std::string& word) const;
-
     template <typename DocumentPredicate>
     std::vector<Document> FindAllDocuments(const Query& query, DocumentPredicate document_predicate) const;
     static bool IsValidWord(const std::string& word);
 };
-
 
 template <typename DocumentPredicate>
 std::vector<Document> SearchServer::FindTopDocuments(const std::string& raw_query, DocumentPredicate document_predicate) const {
