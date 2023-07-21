@@ -99,8 +99,8 @@ void TestSearchServer() {
     RUN_TEST(TestParallelMatchDoc);
     RUN_TEST(Test7ProblemWithMatch);
     RUN_TEST(TestPerformanceParallelMatching);
-    //RUN_TEST(TestParallelFindTopDocuments);
-    //RUN_TEST(TestPerformanceParallelFindTop);
+    RUN_TEST(TestParallelFindTopDocuments);
+    RUN_TEST(TestPerformanceParallelFindTop);
 }
 
 // Тест проверяет, что поисковая система исключает стоп-слова при добавлении документов
@@ -595,21 +595,21 @@ void TestParallelFindTopDocuments(){
 
 
 
-//    cout << "PACTUAL by default:"s << endl;
-//    // последовательная версия
-//    for (const Document& document : search_server.FindTopDocuments(execution::par,"curly nasty cat"s)) {
-//        PrintDocumentUTestOver(document);
-//    }
-//    cout << "PBANNED:"s << endl;
-//    // последовательная версия
-//    for (const Document& document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s, DocumentStatus::BANNED)) {
-//        PrintDocumentUTestOver(document);
-//    }
-//    cout << "PEven ids:"s << endl;
-//    // параллельная версия
-////    //for (const Document& document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; })) {
-////        PrintDocumentUTestOver(document);
-////    }
+    cout << "PACTUAL by default:"s << endl;
+    // последовательная версия
+    for (const Document& document : search_server.FindTopDocuments(execution::par,"curly nasty cat"s)) {
+        PrintDocumentUTestOver(document);
+    }
+    cout << "PBANNED:"s << endl;
+    // последовательная версия
+    for (const Document& document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s, DocumentStatus::BANNED)) {
+        PrintDocumentUTestOver(document);
+    }
+    cout << "PEven ids:"s << endl;
+//     параллельная версия
+    for (const Document& document : search_server.FindTopDocuments(execution::par, "curly nasty cat"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; })) {
+        PrintDocumentUTestOver(document);
+    }
     ////    ACTUAL by default:
     ////    { document_id = 2, relevance = 0.866434, rating = 1 }
     ////    { document_id = 4, relevance = 0.231049, rating = 1 }
