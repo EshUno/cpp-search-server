@@ -1,6 +1,5 @@
 #include "remove_duplicates.h"
 
-
 void RemoveDuplicates(SearchServer& search_server){
     const auto MakeGluedString = [](const auto& freq) {
         std::string res;

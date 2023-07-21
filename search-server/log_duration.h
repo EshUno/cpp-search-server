@@ -2,20 +2,22 @@
 
 #include <chrono>
 #include <iostream>
+#include <string_view>
 
 #define PROFILE_CONCAT_INTERNAL(X, Y) X##Y
 #define PROFILE_CONCAT(X, Y) PROFILE_CONCAT_INTERNAL(X, Y)
 #define UNIQUE_VAR_NAME_PROFILE PROFILE_CONCAT(profileGuard, __LINE__)
+
 #define LOG_DURATION(x) LogDuration UNIQUE_VAR_NAME_PROFILE(x)
-
-
-#define LOG_DURATION_STREAM(x, str) LogDuration UNIQUE_VAR_NAME_PROFILE(x, str)
+#define LOG_DURATION_STREAM(x, y) LogDuration UNIQUE_VAR_NAME_PROFILE(x, y)
 
 class LogDuration {
 public:
     using Clock = std::chrono::steady_clock;
-    LogDuration(const std::string& id, std::ostream& ost = std::cerr)
-        : id_(id), ost_(ost){
+
+    LogDuration(std::string_view id, std::ostream& dst_stream = std::cerr)
+        : id_(id)
+        , dst_stream_(dst_stream) {
     }
 
     ~LogDuration() {
@@ -24,11 +26,11 @@ public:
 
         const auto end_time = Clock::now();
         const auto dur = end_time - start_time_;
-        ost_ << id_ << ": "s << duration_cast<milliseconds>(dur).count() << " ms"s << std::endl;
+        dst_stream_ << id_ << ": "sv << duration_cast<milliseconds>(dur).count() << " ms"sv << std::endl;
     }
 
 private:
     const std::string id_;
-    std::ostream& ost_;
     const Clock::time_point start_time_ = Clock::now();
+    std::ostream& dst_stream_;
 };

@@ -1,37 +1,68 @@
-#include <iostream>
-#include "search_server.h"
-#include "request_queue.h"
-#include "paginator.h"
-#include "remove_duplicates.h"
+//#include <iostream>
+////#include "search_server.h"
+////#include "request_queue.h"
+////#include "paginator.h"
+////#include "remove_duplicates.h"
+
+#include "process_queries.h"
+//using namespace std;
+
+//#include <algorithm>
+//#include <cstdlib>
+//#include <future>
+//#include <map>
+//#include <numeric>
+//#include <random>
+//#include <string>
+//#include <vector>
+//#include <mutex>
+////#include "concurrent_map.h"
+////#include "log_duration.h"
+////#include "test_framework.h"
+//#include <execution>
+//#include <string>
+//#include <vector>
+
 #include "test_example_functions.h"
-using namespace std;
 
 int main() {
-    try {
-        TestSearchServer();
-        SearchServer search_server("and in at"s);
-        RequestQueue request_queue(search_server);
-        search_server.AddDocument(1, "curly cat curly tail"s, DocumentStatus::ACTUAL, {7, 2, 7});
-        search_server.AddDocument(2, "curly dog and fancy collar"s, DocumentStatus::ACTUAL, {1, 2, 3});
-        search_server.AddDocument(3, "big cat fancy collar "s, DocumentStatus::ACTUAL, {1, 2, 8});
-        search_server.AddDocument(4, "big dog sparrow Eugene"s, DocumentStatus::ACTUAL, {1, 3, 2});
-        search_server.AddDocument(5, "big dog sparrow Vasiliy"s, DocumentStatus::ACTUAL, {1, 1, 1});
+   TestSearchServer();
 
+    SearchServer search_server("and with"s);
 
-
-        // 1439 запросов с нулевым результатом
-        /*for (int i = 0; i < 1439; ++i) {
-            request_queue.AddFindRequest("empty request"s);
-        }*/
-        // все еще 1439 запросов с нулевым результатом
-        request_queue.AddFindRequest("curly dog"s);
-        // новые сутки, первый запрос удален, 1438 запросов с нулевым результатом
-        request_queue.AddFindRequest("big collar"s);
-        // первый запрос удален, 1437 запросов с нулевым результатом
-        request_queue.AddFindRequest("sparrow"s);
-        cout << "Total empty requests: "s << request_queue.GetNoResultRequests() << endl;
-    } catch (...) {
-        cout << "Ошибка в поисковом запросе!"s << endl;
-
+    int id = 0;
+    for (
+        const string& text : {
+            "funny pet and nasty rat"s,
+            "funny pet with curly hair"s,
+            "funny pet and not very nasty rat"s,
+            "pet with rat and rat and rat"s,
+            "nasty rat with curly hair"s,
+        }
+        ) {
+        search_server.AddDocument(++id, text, DocumentStatus::ACTUAL, {1, 2});
     }
+
+    const string query = "curly and funny"s;
+
+    auto report = [&search_server, &query] {
+        cout << search_server.GetDocumentCount() << " documents total, "s
+             << search_server.FindTopDocuments(query).size() << " documents for query ["s << query << "]"s << endl;
+    };
+
+    report();
+    // однопоточная версия
+    search_server.RemoveDocument(5);
+    report();
+    // однопоточная версия
+    search_server.RemoveDocument(execution::seq, 1);
+    report();
+    // многопоточная версия
+    search_server.RemoveDocument(execution::par, 2);
+    report();
+
+    return 0;
+   //TestParallelFindTopDocuments();
+   //TestPerformanceParallelFindTop();
 }
+
